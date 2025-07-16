@@ -11,29 +11,43 @@ program
   .option('-l', 'count number of lines in a file')
   .option('-w', 'count the number of words in a file')
   .option('-m', 'count the number of characters in a file')
-  .argument('<path>')
+  .argument('[path]')
   .action((path, options) => {
-    const stats = statSync(path);
-    const data = readFileSync(path, 'utf8');
-    const lineCount = data === '' ? 0 : data.split('\n').length - (data.endsWith('\n') ? 1 : 0);
-    const words = data.match(/\S+/g);
-    const wordCount = words ? words.length : 0;
+    if (path) {
+      const stats = statSync(path);
+      const data = readFileSync(path, 'utf8');
+      handleData(data, path);
+    } else {
+      // Read from stdin
+      let input = '';
+      process.stdin.setEncoding('utf8');
+      process.stdin.on('data', chunk => input += chunk);
+      process.stdin.on('end', () => {
+        handleData(input, '');
+      });
+      process.stdin.resume();
+    }
 
-    if (Object.keys(options).length === 0) {
-      console.log(`${lineCount} ${wordCount} ${stats.size} ${path}`);
-    }
-    if (options.c) {
-      console.log(`${stats.size} ${path}` );
-    }
-    if (options.l) {
-      console.log(`${lineCount} ${path}`);
-    }
-    if (options.w) {      
-      console.log(`${wordCount} ${path}`);
-    }
-    if (options.m) {
-      const charCount = data.length;
-      console.log(`${charCount} ${path}`);
+    function handleData(data: string, path: string) {
+      const lineCount = data === '' ? 0 : data.split('\n').length - (data.endsWith('\n') ? 1 : 0);
+      const words = data.match(/\S+/g);
+      const wordCount = words ? words.length : 0;
+
+      if (Object.keys(options).length === 0) {
+        console.log(`${lineCount} ${wordCount} ${data.length} ${path}`);
+      }
+      if (options.c) {
+        console.log(`${data.length} ${path}`);
+      }
+      if (options.l) {
+        console.log(`${lineCount} ${path}`);
+      }
+      if (options.w) {
+        console.log(`${wordCount} ${path}`);
+      }
+      if (options.m) {
+        console.log(`${data.length} ${path}`);
+      }
     }
   });
 
